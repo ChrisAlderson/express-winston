@@ -1,13 +1,24 @@
 sudo: false
+
 language: node_js
+
 node_js:
-  - "0.10"
-  - "0.11"
-  - "0.12"
-  - "4"
-  - "6"
-  - "7"
+  - 6
+  - 7
+  - 8
+  - 9
+
+cache:
+  directories:
+    - node_modules
+
+install:
+  - npm i
+  - npm i --no-save winston@next
 
 script:
-  - "test $TRAVIS_NODE_VERSION  = '0.6' || npm test"
-  - "test $TRAVIS_NODE_VERSION != '0.6' || npm run-script test-coverage"
+  - npm run lint
+  - npm run test
+
+after_success:
+  - npm run coveralls

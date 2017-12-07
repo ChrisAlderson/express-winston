@@ -1,357 +1,365 @@
-// Copyright (c) 2012-2014 Heapsource.com and Contributors - http://www.heapsource.com
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-//
-var winston = require('winston');
-var util = require('util');
-var chalk = require('chalk');
-
-var _ = require('lodash');
-
 /**
- * A default list of properties in the request object that are allowed to be logged.
- * These properties will be safely included in the meta of the log.
- * 'body' is not included in this list because it can contains passwords and stuff that are sensitive for logging.
- * TODO: Include 'body' and get the defaultRequestFilter to filter the inner properties like 'password' or 'password_confirmation', etc. Pull requests anyone?
- * @type {Array}
+ * Copyright (c) 2012-2014 Heapsource.com and Contributors - http://www.heapsource.com
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
-exports.requestWhitelist = ['url', 'headers', 'method', 'httpVersion', 'originalUrl', 'query'];
+const winston = require('winston')
 
 /**
- * A default list of properties in the request body that are allowed to be logged.
- * This will normally be empty here, since it should be done at the route level.
- * @type {Array}
+ * A default list of properties in the request object that are allowed to be
+ * logged. These properties will be safely included in the meta of the log.
+ * 'body' is not included in this list because it can contains passwords and
+ * stuff that are sensitive for logging.
+ * @type {Array<string>}
  */
-exports.bodyWhitelist = [];
+exports.requestWhitelist = [
+  'url',
+  'headers',
+  'method',
+  'httpVersion',
+  'originalUrl',
+  'query'
+]
 
 /**
- * A default list of properties in the request body that are not allowed to be logged.
- * @type {Array}
+ * A default list of properties in the response object that are allowed to be
+ * logged. These properties will be safely included in the meta of the log.
+ * @type {Array<string>}
  */
-exports.bodyBlacklist = [];
+exports.responseWhitelist = ['statusCode']
 
 /**
- * A default list of properties in the response object that are allowed to be logged.
- * These properties will be safely included in the meta of the log.
- * @type {Array}
+ * A default list of properties in the request body that are allowed to be
+ * logged. This will normally be empty here, since it should be done at the
+ * route level.
+ * @type {Array<string>}
  */
-exports.responseWhitelist = ['statusCode'];
+exports.bodyWhitelist = []
 
 /**
- * A list of request routes that will be skipped instead of being logged. This would be useful if routes for health checks or pings would otherwise pollute
+ * A default list of properties in the request body that are not allowed to be
+ * logged.
+ * @type {Array<string>}
+ */
+exports.bodyBlacklist = []
+
+/**
+ * A list of request routes that will be skipped instead of being logged. This
+ * would be useful if routes for health checks or pings would otherwise pollute
  * your log files.
- * @type {Array}
+ * @type {Array<string>}
  */
-exports.ignoredRoutes = [];
+exports.ignoredRoutes = []
 
 /**
  * A default function to filter the properties of the req object.
- * @param req
- * @param propName
- * @return {*}
+ * @param {!Object} req - The request object to filter.
+ * @param {!Object} propName - The property to filter filter from the request
+ * object.
+ * @returns {Object} - The filtered property.
  */
-exports.defaultRequestFilter = function (req, propName) {
-    return req[propName];
-};
+exports.defaultRequestFilter = (req, propName) => req[propName]
 
 /**
  * A default function to filter the properties of the res object.
- * @param res
- * @param propName
- * @return {*}
+ * @param {!Object} res - The response object to filter.
+ * @param {!Object} propName - The property to filter filter from the response
+ * object.
+ * @returns {Object} - The filtered property.
  */
-exports.defaultResponseFilter = function (res, propName) {
-    return res[propName];
-};
+exports.defaultResponseFilter = (res, propName) => res[propName]
 
 /**
- * A default function to decide whether skip logging of particular request. Doesn't skip anything (i.e. log all requests).
- * @return always false
+ * A default function to decide whether skip logging of particular request.
+ * Doesn't skip anything (i.e. log all requests).
+ * @returns {boolean} - Defaults to false.
  */
-exports.defaultSkip = function() {
-  return false;
-};
+exports.defaultSkip = () => false
 
+/**
+ * The default winston instance to use.
+ * @type {Object}
+ */
+exports.defaultWinstonInstance = winston.createLogger({
+  transports: new winston.transports.Console({
+    format: winston.format.json({
+      space: 2
+    })
+  })
+})
+
+/**
+ * Filter an object with a whitelist.
+ * @todo Replace `forEach` with reduce?
+ * @param {!Object} originalObj - The
+ * @param {!Array<string>} whiteList - The
+ * @param {!Function} initialFilter - The filter function to filter the list.
+ * @returns {Objecct|undefined} - The filtered object or undefined.
+ */
 function filterObject(originalObj, whiteList, initialFilter) {
+  const obj = {}
+  let fieldsSet = false
 
-    var obj = {};
-    var fieldsSet = false;
+  whiteList.forEach(propName => {
+    const value = initialFilter(originalObj, propName)
 
-    [].concat(whiteList).forEach(function (propName) {
-        var value = initialFilter(originalObj, propName);
+    if (typeof value !== 'undefined') {
+      obj[propName] = value
+      fieldsSet = true
+    }
+  })
 
-        if(typeof (value) !== 'undefined') {
-            obj[propName] = value;
-            fieldsSet = true;
-        };
-    });
-
-    return fieldsSet?obj:undefined;
+  return fieldsSet ? obj : undefined
 }
 
-//
-// ### function errorLogger(options)
-// #### @options {Object} options to initialize the middleware.
-//
+/**
+ * function errorLogger(options)
+ * @param {!Object} options - to initialize the middleware.
+ * @returns {Function} - Middleware function for express.
+*/
+exports.errorLogger = ({
+  requestWhitelist = exports.requestWhitelist,
+  requestFilter = exports.defaultRequestFilter,
+  winstonInstance = exports.defaultWinstonInstance,
+  msg = (req, res, err) => {
+    return `HTTP ${req.method} ${req.url} ${err.message}`
+  },
+  baseMeta = {},
+  metaField = null,
+  level = 'error',
+  dynamicMeta
+} = {}) => {
+  return (err, req, res, next) => {
+    let metaObj = winston.exceptions.getAllInfo(err)
+    metaObj.req = filterObject(req, requestWhitelist, requestFilter)
 
+    // TODO: Move to enrichMeta function?
+    if (dynamicMeta) {
+      Object.assign(metaObj, dynamicMeta(req, res, err))
+    }
+    if (metaField) {
+      metaObj = {
+        [metaField]: metaObj
+      }
+    }
+    Object.assign(metaObj, baseMeta)
 
-exports.errorLogger = function errorLogger(options) {
+    const message = msg(req, res, err)
+    const l = typeof level === 'function' ? level(req, res, err) : level
+    winstonInstance.log(l, message, {
+      meta: metaObj
+    })
 
-    ensureValidOptions(options);
+    return next(err)
+  }
+}
 
-    options.requestWhitelist = options.requestWhitelist || exports.requestWhitelist;
-    options.requestFilter = options.requestFilter || exports.defaultRequestFilter;
-    options.winstonInstance = options.winstonInstance || (new winston.Logger ({ transports: options.transports }));
-    options.msg = options.msg || 'middlewareError';
-    options.baseMeta = options.baseMeta || {};
-    options.metaField = options.metaField || null;
-    options.level = options.level || 'error';
-    options.dynamicMeta = options.dynamicMeta || function(req, res, err) { return null; };
+/**
+ * Get the level from a status code.
+ * @param {!number} statusCode - The status code to check.
+ * @param {!Object} statusLevels - The status level object to get the level
+ * from.
+ * @returns {string} - A log level.
+ */
+function levelFromStatus(statusCode, statusLevels) {
+  let level = 'info'
 
-    // Using mustache style templating
-    var template = _.template(options.msg, {
-      interpolate: /\{\{([\s\S]+?)\}\}/g
-    });
+  if (statusCode >= 200) {
+    level = statusLevels.success || 'info'
+  }
+  if (statusCode >= 400) {
+    level = statusLevels.warn || 'warn'
+  }
+  if (statusCode >= 500) {
+    level = statusLevels.error || 'error'
+  }
 
-    return function (err, req, res, next) {
+  return level
+}
 
-        // Let winston gather all the error data.
-        var exceptionMeta = winston.exception.getAllInfo(err);
-        exceptionMeta.req = filterObject(req, options.requestWhitelist, options.requestFilter);
+/**
+ * Parse a body objecct to a string.
+ * @param {!Object} body - The body to parse.
+ * @param {!boolean} isJson - Boolean to check if the body is json.
+ * @returns {string} - The parsed body as a string.
+ */
+function bodyToString(body, isJson) {
+  const stringBody = body && body.toString()
 
-        if(options.dynamicMeta) {
-            var dynamicMeta = options.dynamicMeta(req, res, err);
-            exceptionMeta = _.assign(exceptionMeta, dynamicMeta);
+  if (isJson) {
+    return JSON.parse(body)
+  }
+
+  return stringBody
+}
+
+/**
+ * Filter the body object based on the bodyWhitelist and bodyBlacklist.
+ * @param {!Object} options - The options to filter the body.
+ * @returns {Object|undefined} - The filtered body.
+ */
+function filterBody({
+  req,
+  requestWhitelist,
+  requestFilter,
+  bodyWhitelist,
+  bodyBlacklist
+}) {
+  if (!req.body) {
+    return
+  }
+
+  if (bodyBlacklist.length > 0 && bodyWhitelist.length === 0) {
+    const whitelist = Object.keys(req.body).concat(bodyBlacklist)
+      .filter((elem, pos, arr) => arr.indexOf(elem) === pos)
+
+    return filterObject(req.body, whitelist, requestFilter)
+  } else if (
+    requestWhitelist.indexOf('body') >= -1 &&
+      bodyWhitelist.length === 0 &&
+      bodyBlacklist.length === 0
+  ) {
+    return filterObject(req.body, Object.keys(req.body), requestFilter)
+  }
+
+  return filterObject(req.body, bodyWhitelist, requestFilter)
+}
+
+/**
+ * function logger(options)
+ * @param {Object} options to initialize the middleware.
+ * @returns {Function} - Middleware function for express.
+*/
+exports.logger = ({
+  requestWhitelist = exports.requestWhitelist,
+  responseWhitelist = exports.responseWhitelist,
+  bodyWhitelist = exports.bodyWhitelist,
+  bodyBlacklist = exports.bodyBlacklist,
+  requestFilter = exports.defaultRequestFilter,
+  responseFilter = exports.defaultResponseFilter,
+  ignoredRoutes = exports.ignoredRoutes,
+  winstonInstance = exports.defaultWinstonInstance,
+  statusLevels = false,
+  level = 'info',
+  msg = (req, res) => {
+    return `HTTP ${req.method} ${req.url}`
+  },
+  baseMeta = {},
+  metaField = null,
+  ignoreRoute = () => false,
+  skip = exports.defaultSkip,
+  meta = true,
+  dynamicMeta
+} = {}) => {
+  return (req, res, next) => {
+    req._startTime = new Date()
+    req._routeWhitelists = {
+      req: [],
+      res: [],
+      body: []
+    }
+    req._routeBlacklists = {
+      body: []
+    }
+    req.url = req.originalUrl || req.url
+
+    if (ignoredRoutes.indexOf(req.url) > -1) {
+      return next()
+    }
+    if (ignoreRoute(req, res)) {
+      return next()
+    }
+    if (skip(req, res)) {
+      return next()
+    }
+
+    const l = typeof level === 'function' ? level(req, res) : statusLevels
+      ? levelFromStatus(res.statusCode, statusLevels) : level
+
+    const { end } = res
+    res.end = (chunk, encoding) => {
+      res.responseTime = new Date() - req._startTime
+      res.end = end
+      res.end(chunk, encoding)
+
+      let metaObj = {}
+      if (meta === true) {
+        const reqWhitelist = [].concat(
+          requestWhitelist,
+          req._routeWhitelists.req
+        )
+        const resWhitelist = [].concat(
+          responseWhitelist,
+          req._routeWhitelists.res
+        )
+
+        Object.assign(metaObj, {
+          req: filterObject(req, reqWhitelist, requestFilter),
+          res: filterObject(res, resWhitelist, responseFilter),
+          responseTime: res.responseTime
+        })
+
+        if (responseWhitelist.indexOf('body') > -1) {
+          const contentType = res._headers['content-type']
+          const isJson = contentType && contentType.indexOf('json') >= 0
+
+          metaObj.res.body = bodyToString(chunk, isJson)
         }
 
-        if (options.metaField) {
-            var newMeta = {};
-            newMeta[options.metaField] = exceptionMeta;
-            exceptionMeta = newMeta;
+        const filteredBody = filterBody({
+          req,
+          requestWhitelist,
+          requestFilter,
+          bodyWhitelist: [].concat(
+            bodyWhitelist,
+            req._routeWhitelists.body
+          ),
+          bodyBlacklist: [].concat(
+            bodyBlacklist,
+            req._routeBlacklists.body
+          )
+        })
+
+        if (metaObj.req) {
+          if (filteredBody) {
+            metaObj.req.body = filteredBody
+          } else {
+            delete metaObj.req.body
+          }
         }
 
-        exceptionMeta = _.assign(exceptionMeta, options.baseMeta);
+        // TODO: Move to enrichMeta function?
+        if (dynamicMeta) {
+          Object.assign(metaObj, dynamicMeta(req, res))
+        }
+        if (metaField) {
+          metaObj = {
+            [metaField]: metaObj
+          }
+        }
+        Object.assign(metaObj, baseMeta)
+      }
 
-        var level = _.isFunction(options.level) ? options.level(req, res, err) : options.level;
-
-        // This is fire and forget, we don't want logging to hold up the request so don't wait for the callback
-        options.winstonInstance.log(level, template({err: err, req: req, res: res}), exceptionMeta);
-
-        next(err);
-    };
-};
-
-function levelFromStatus(options) {
-    return function (req, res) {
-        var level = "";
-        if (res.statusCode >= 100) { level = options.statusLevels.success || "info"; }
-        if (res.statusCode >= 400) { level = options.statusLevels.warn || "warn"; }
-        if (res.statusCode >= 500) { level = options.statusLevels.error || "error"; }
-        return level;
+      const message = msg(req, res)
+      winstonInstance.log(l, message, metaObj)
     }
-}
 
-//
-// ### function logger(options)
-// #### @options {Object} options to initialize the middleware.
-//
-exports.logger = function logger(options) {
-
-    ensureValidOptions(options);
-    ensureValidLoggerOptions(options);
-
-    options.requestWhitelist = options.requestWhitelist || exports.requestWhitelist;
-    options.bodyWhitelist = options.bodyWhitelist || exports.bodyWhitelist;
-    options.bodyBlacklist = options.bodyBlacklist || exports.bodyBlacklist;
-    options.responseWhitelist = options.responseWhitelist || exports.responseWhitelist;
-    options.requestFilter = options.requestFilter || exports.defaultRequestFilter;
-    options.responseFilter = options.responseFilter || exports.defaultResponseFilter;
-    options.ignoredRoutes = options.ignoredRoutes || exports.ignoredRoutes;
-    options.winstonInstance = options.winstonInstance || (new winston.Logger ({ transports: options.transports }));
-    options.statusLevels = options.statusLevels || false;
-    options.level = options.statusLevels ? levelFromStatus(options) : (options.level || "info");
-    options.msg = options.msg || "HTTP {{req.method}} {{req.url}}";
-    options.baseMeta = options.baseMeta || {};
-    options.metaField = options.metaField || null;
-    options.colorize = options.colorize || false;
-    options.expressFormat = options.expressFormat || false;
-    options.ignoreRoute = options.ignoreRoute || function () { return false; };
-    options.skip = options.skip || exports.defaultSkip;
-    options.dynamicMeta = options.dynamicMeta || function(req, res) { return null; };
-
-    return function (req, res, next) {
-        var coloredRes = {};
-
-        var currentUrl = req.originalUrl || req.url;
-        if (currentUrl && _.includes(options.ignoredRoutes, currentUrl)) return next();
-        if (options.ignoreRoute(req, res)) return next();
-
-        req._startTime = (new Date);
-
-        req._routeWhitelists = {
-            req: [],
-            res: [],
-            body: []
-        };
-
-        req._routeBlacklists = {
-            body: []
-        };
-
-        // Manage to get information from the response too, just like Connect.logger does:
-        var end = res.end;
-        res.end = function(chunk, encoding) {
-            res.responseTime = (new Date) - req._startTime;
-
-            res.end = end;
-            res.end(chunk, encoding);
-
-            req.url = req.originalUrl || req.url;
-
-            var meta = {};
-
-            if(options.meta !== false) {
-              var logData = {};
-
-              var requestWhitelist = options.requestWhitelist.concat(req._routeWhitelists.req || []);
-              var responseWhitelist = options.responseWhitelist.concat(req._routeWhitelists.res || []);
-
-              logData.res = res;
-
-              if (_.includes(responseWhitelist, 'body')) {
-                if (chunk) {
-                  var isJson = (res._headers && res._headers['content-type']
-                    && res._headers['content-type'].indexOf('json') >= 0);
-
-                  logData.res.body = bodyToString(chunk, isJson);
-                }
-              }
-
-              logData.req = filterObject(req, requestWhitelist, options.requestFilter);
-              logData.res = filterObject(res, responseWhitelist, options.responseFilter);
-
-              var bodyWhitelist = _.union(options.bodyWhitelist, (req._routeWhitelists.body || []));
-              var blacklist = _.union(options.bodyBlacklist, (req._routeBlacklists.body || []));
-
-              var filteredBody = null;
-
-              if ( req.body !== undefined ) {
-                  if (blacklist.length > 0 && bodyWhitelist.length === 0) {
-                    var whitelist = _.difference(Object.keys(req.body), blacklist);
-                    filteredBody = filterObject(req.body, whitelist, options.requestFilter);
-                  } else if (
-                    requestWhitelist.indexOf('body') !== -1 &&
-                    bodyWhitelist.length === 0 &&
-                    blacklist.length === 0
-                  ) {
-                    filteredBody = filterObject(req.body, Object.keys(req.body), options.requestFilter);
-                  } else {
-                    filteredBody = filterObject(req.body, bodyWhitelist, options.requestFilter);
-                  }
-              }
-
-              if (logData.req) {
-                if (filteredBody) {
-                  logData.req.body = filteredBody;
-                } else {
-                  delete logData.req.body;
-                }
-              }
-
-              logData.responseTime = res.responseTime;
-
-              if(options.dynamicMeta) {
-                  var dynamicMeta = options.dynamicMeta(req, res);
-                  logData = _.assign(logData, dynamicMeta);
-              }
-
-              if (options.metaField) {
-                  var newMeta = {};
-                  newMeta[options.metaField] = logData;
-                  logData = newMeta;
-              }
-              meta = _.assign(meta, logData);
-            }
-
-            meta = _.assign(meta, options.baseMeta);
-
-            var expressMsgFormat = "{{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms";
-            if (options.colorize) {
-              // Palette from https://github.com/expressjs/morgan/blob/master/index.js#L205
-              var statusColor = 'green';
-              if (res.statusCode >= 500) statusColor = 'red';
-              else if (res.statusCode >= 400) statusColor = 'yellow';
-              else if (res.statusCode >= 300) statusColor = 'cyan';
-
-              expressMsgFormat = chalk.grey("{{req.method}} {{req.url}}") +
-                " {{res.statusCode}} " +
-                chalk.grey("{{res.responseTime}}ms");
-              coloredRes.statusCode = chalk[statusColor](res.statusCode);
-            }
-            var msgFormat = !options.expressFormat ? options.msg : expressMsgFormat;
-
-            // Using mustache style templating
-            var template = _.template(msgFormat, {
-              interpolate: /\{\{(.+?)\}\}/g
-            });
-
-            var msg = template({req: req, res: _.assign({}, res, coloredRes)});
-
-            // This is fire and forget, we don't want logging to hold up the request so don't wait for the callback
-            if (!options.skip(req, res)) {
-              var level = _.isFunction(options.level) ? options.level(req, res) : options.level;
-              options.winstonInstance.log(level, msg, meta);
-            }
-        };
-
-        next();
-    };
-};
-
-function safeJSONParse(string) {
-    try {
-        return JSON.parse(string);
-    } catch (e) {
-        return undefined;
-    }
-}
-
-function bodyToString(body, isJSON) {
-    var stringBody = body && body.toString();
-    if (isJSON) {
-        return (safeJSONParse(body) || stringBody);
-    }
-    return stringBody;
-}
-
-function ensureValidOptions(options) {
-    if(!options) throw new Error("options are required by express-winston middleware");
-    if(!((options.transports && (options.transports.length > 0)) || options.winstonInstance))
-        throw new Error("transports or a winstonInstance are required by express-winston middleware");
-
-    if (options.dynamicMeta && !_.isFunction(options.dynamicMeta)) {
-        throw new Error("`dynamicMeta` express-winston option should be a function");
-    }
-}
-
-function ensureValidLoggerOptions(options) {
-    if (options.ignoreRoute && !_.isFunction(options.ignoreRoute)) {
-        throw new Error("`ignoreRoute` express-winston option should be a function");
-    }
+    return next()
+  }
 }
