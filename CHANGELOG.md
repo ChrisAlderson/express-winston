@@ -1,3 +1,8 @@
+## 3.0.0
+* `options.msg` must be a function returning a string.
+* Remove `options.expressFormat`, format can be edited via `options.msg`.
+* Remove `options.colorize`, colors can be added via options.msg`. 
+
 ## 2.4.0
 * Allow `options.level` to be a function for dynamic level setting ([#148](https://github.com/bithavoc/express-winston/pull/148), @CryptArchy)
 

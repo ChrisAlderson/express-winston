@@ -1,11 +1,11 @@
 # express-winston
 
-[![Monthly Downloads](https://img.shields.io/npm/dm/express-winston.svg)](https://www.npmjs.com/package/express-winston)
 [![Build Status](https://travis-ci.org/ChrisAlderson/express-winston.svg?branch=master)](https://travis-ci.org/ChrisAlderson/express-winston)
 [![Coverage Status](https://coveralls.io/repos/github/ChrisAlderson/express-winston/badge.svg?branch=master)](https://coveralls.io/github/ChrisAlderson/express-winston?branch=master)
 [![devDependency Status](https://david-dm.org/ChrisAlderson/express-winston/dev-status.svg)](https://david-dm.org/ChrisAlderson/express-winston?type=dev)
 
-> [winston](https://github.com/winstonjs/winston) middleware for [express.js](https://github.com/expressjs/express)
+> [winston](https://github.com/winstonjs/winston) middleware for
+[express.js](https://github.com/expressjs/express)
 
 ## Installation
 

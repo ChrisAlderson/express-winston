@@ -1,37 +1,7 @@
 {
-  "author": {
-    "name": "bithavoc",
-    "email": "im@bithavoc.io",
-    "url": "http://bithavoc.io"
-  },
-  "name": "express-winston",
+  "name": "@chrisalderson/express-winston",
+  "version": "3.0.0",
   "description": "express.js middleware for flatiron/winston",
-  "keywords": [
-    "winston",
-    "flatiron",
-    "logging",
-    "express",
-    "log",
-    "error",
-    "handler",
-    "middleware",
-    "colors"
-  ],
-  "version": "2.4.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bithavoc/express-winston.git"
-  },
-  "bugs": {
-    "url": "http://github.com/bithavoc/express-winston/issues",
-    "email": "im@bithavoc.io"
-  },
-  "main": "index.js",
-  "scripts": {
-    "coveralls": "cat ./coverage/lcov.info | node ./node_modules/.bin/coveralls",
-    "lint": "./node_modules/.bin/eslint test/** *.js",
-    "test": "./node_modules/.bin/nyc --reporter=text --reporter=lcov ./node_modules/.bin/mocha --timeout 15000 --reporter spec test/**"
-  },
   "dependencies": {},
   "devDependencies": {
     "coveralls": "^3.0.0",
@@ -45,13 +15,43 @@
   "peerDependencies": {
     "winston": "^3.0.0-rc1"
   },
+  "license": "MIT",
+  "scripts": {
+    "coveralls": "cat ./coverage/lcov.info | coveralls",
+    "lint": "eslint test/** *.js",
+    "test": "nyc -r=text -r=lcov mocha"
+  },
   "engines": {
     "node": ">=6.3.0"
   },
+  "keywords": [
+    "winston",
+    "flatiron",
+    "logging",
+    "express",
+    "log",
+    "error",
+    "handler",
+    "middleware",
+    "colors"
+  ],
+  "main": "index.js",
   "files": [
     "index.js"
   ],
-  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bithavoc/express-winston.git"
+  },
+  "bugs": {
+    "url": "http://github.com/bithavoc/express-winston/issues",
+    "email": "im@bithavoc.io"
+  },
+  "author": {
+    "name": "bithavoc",
+    "email": "im@bithavoc.io",
+    "url": "http://bithavoc.io"
+  },
   "contributors": [
     {
       "name": "Lars Jacob",
