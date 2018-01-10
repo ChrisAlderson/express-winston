@@ -81,7 +81,7 @@ const options = {
                                     // function returns undefined, the
                                     // key/value will not be included in the
                                     // meta.
-   
+
   responseFilter(res, propName) {   // A function to filter/return response
     return Object                   // values, defaults to returning all
   }                                 // values allowed by whitelist. If the
@@ -106,9 +106,9 @@ const options = {
                                     // provided the transports option is
                                     // ignored.
 
-  msg(req, res, err) {              // Customize the default logging message. 
-    return Sring 
-  } 
+  msg(req, res, err) {              // Customize the default logging message.
+    return Sring
+  }
 
   baseMeta: Object,                 // Default meta data to be added to log,
                                     // this will be merged with the error data.
@@ -177,9 +177,9 @@ const options = {
                                     // provided the transports option is
                                     // ignored.
 
-  msg(req, res, err) {              // Customize the default logging message. 
-    return Sring 
-  } 
+  msg(req, res, err) {              // Customize the default logging message.
+    return Sring
+  }
 
   baseMeta: Object,                 // Default meta data to be added to log,
                                     // this will be merged with the error data.
@@ -504,7 +504,7 @@ info level, sub 500 responses as warnings and 500+ responses as errors. To
 change these levels specify an object as follows:
 
 ```js
-const options = { 
+const options = {
   statusLevels: {
     success: 'debug',
     warn: 'debug',
@@ -514,7 +514,7 @@ const options = {
 app.use(expressWinston.logger(options))
 ```
 
-## Dynamica Status Levels
+## Dynamic Status Levels
 
 If you set statusLevels to false and assign a function to level, you can
 customize the log level for any scenario.
@@ -523,7 +523,7 @@ customize the log level for any scenario.
 const options = {
   statusLevels: false // default value
   level(req, res) {
-    let level = '' 
+    let level = ''
 
     if (res.statusCode >= 100) {
       level = 'info'
@@ -584,7 +584,7 @@ Run the basic Mocha tests and generate the `./coverage/` coverage report:
 
 ## Issues and Collaboration
 
-If you ran into any problems, please use the project 
+If you ran into any problems, please use the project
 [Issues section](https://github.com/bithavoc/express-winston/issues) to search
 or post any bug.
 
