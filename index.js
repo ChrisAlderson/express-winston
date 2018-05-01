@@ -137,6 +137,7 @@ exports.errorLogger = ({
   requestWhitelist = exports.requestWhitelist,
   requestFilter = exports.defaultRequestFilter,
   winstonInstance = exports.defaultWinstonInstance,
+  transports,
   msg = (req, res, err) => {
     return `HTTP ${req.method} ${req.url} ${err.message}`
   },
@@ -162,7 +163,14 @@ exports.errorLogger = ({
 
     const message = msg(req, res, err)
     const l = typeof level === 'function' ? level(req, res, err) : level
-    winstonInstance.log(l, message, {
+    const logger = transports
+      ? winston.createLogger({
+        transports: Array.isArray(transports) ? transports : [transports]
+      })
+      : winstonInstance
+    logger.log({
+      level: l,
+      message,
       meta: metaObj
     })
 
@@ -179,7 +187,6 @@ exports.errorLogger = ({
  */
 function levelFromStatus(statusCode, statusLevels) {
   let level = 'info'
-
   if (statusCode >= 200) {
     level = statusLevels.success || 'info'
   }
@@ -255,6 +262,7 @@ exports.logger = ({
   responseFilter = exports.defaultResponseFilter,
   ignoredRoutes = exports.ignoredRoutes,
   winstonInstance = exports.defaultWinstonInstance,
+  transports,
   statusLevels = false,
   level = 'info',
   msg = (req, res) => {
@@ -357,7 +365,16 @@ exports.logger = ({
       }
 
       const message = msg(req, res)
-      winstonInstance.log(l, message, metaObj)
+      const logger = transports
+        ? winston.createLogger({
+          transports: Array.isArray(transports) ? transports : [transports]
+        })
+        : winstonInstance
+      logger.log({
+        level: l,
+        message,
+        meta: metaObj
+      })
     }
 
     return next()
