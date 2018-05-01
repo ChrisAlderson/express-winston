@@ -104,9 +104,9 @@ describe('express-winston', () => {
       level: true,
       statusLevels: {}
     }),
-    statusCode: 102
+    statusCode: 101
   }, {
-    message: 'should get the log level \'warn\' with \'level\' & \'statusLevels\'',
+    message: 'should get the log level \'ok\' with \'level\' & \'statusLevels\'',
     logger: expressWinston.logger({
       level: true,
       statusLevels: {}
@@ -120,7 +120,7 @@ describe('express-winston', () => {
     }),
     statusCode: 400
   }, {
-    message: 'should get the log level \'warn\' with \'level\' & \'statusLevels\'',
+    message: 'should get the log level \'error\' with \'level\' & \'statusLevels\'',
     logger: expressWinston.logger({
       level: true,
       statusLevels: {}
