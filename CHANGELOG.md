@@ -1,7 +1,13 @@
+## 3.1.0
+* Add `options.transports` to take a single or a list of transports.
+* Update `winston` peer dependency to `3.0.0-rc5`.
+* Add an example to the project in `./example`.
+* Add Node v10 to travis build.
+
 ## 3.0.0
 * `options.msg` must be a function returning a string.
 * Remove `options.expressFormat`, format can be edited via `options.msg`.
-* Remove `options.colorize`, colors can be added via options.msg`. 
+* Remove `options.colorize`, colors can be added via options.msg`.
 
 ## 2.4.0
 * Allow `options.level` to be a function for dynamic level setting ([#148](https://github.com/bithavoc/express-winston/pull/148), @CryptArchy)
