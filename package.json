@@ -1,19 +1,18 @@
 {
   "name": "@chrisalderson/express-winston",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "express.js middleware for flatiron/winston",
   "dependencies": {},
   "devDependencies": {
     "coveralls": "^3.0.0",
-    "eslint": "^4.16.0",
+    "eslint": "^4.19.1",
     "eslint-config-vixo": "^2.0.2",
-    "mocha": "^5.0.0",
-    "nyc": "^11.4.1",
-    "sinon": "^4.2.2",
+    "mocha": "^5.1.1",
+    "nyc": "^11.7.1",
     "supertest": "^3.0.0"
   },
   "peerDependencies": {
-    "winston": "^3.0.0-rc1"
+    "winston": "^3.0.0-rc5"
   },
   "license": "MIT",
   "scripts": {

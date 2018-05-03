@@ -1,18 +1,18 @@
-/* eslint-disable no-unused-expressions */
 /* eslint-disable require-jsdoc */
 const http = require('http')
 const request = require('supertest')
-const sinon = require('sinon')
+const winston = require('winston')
 
 const expressWinston = require('..')
 
 /** @test {express-winston} */
 describe('express-winston', () => {
-  let winstonStub
-
   before(() => {
     const winstonInstance = expressWinston.defaultWinstonInstance
-    winstonStub = sinon.stub(winstonInstance, 'log')
+    const transport = winstonInstance.transports.find(t => {
+      return t.name === 'console'
+    })
+    transport.silent = true
   })
 
   function handleResponse(err, res) {
@@ -104,9 +104,9 @@ describe('express-winston', () => {
       level: true,
       statusLevels: {}
     }),
-    statusCode: 102
+    statusCode: 101
   }, {
-    message: 'should get the log level \'warn\' with \'level\' & \'statusLevels\'',
+    message: 'should get the log level \'ok\' with \'level\' & \'statusLevels\'',
     logger: expressWinston.logger({
       level: true,
       statusLevels: {}
@@ -120,7 +120,7 @@ describe('express-winston', () => {
     }),
     statusCode: 400
   }, {
-    message: 'should get the log level \'warn\' with \'level\' & \'statusLevels\'',
+    message: 'should get the log level \'error\' with \'level\' & \'statusLevels\'',
     logger: expressWinston.logger({
       level: true,
       statusLevels: {}
@@ -195,6 +195,16 @@ describe('express-winston', () => {
       metaField: 'foo'
     })
   }, {
+    message: 'should create a logger with a transport object',
+    logger: expressWinston.logger({
+      transports: new winston.transports.Console({ silent: true })
+    })
+  }, {
+    message: 'should create a logger with a transport array',
+    logger: expressWinston.logger({
+      transports: [new winston.transports.Console({ silent: true })]
+    })
+  }, {
     message: 'should error log without any options',
     logger: expressWinston.errorLogger(),
     error: new Error()
@@ -222,10 +232,18 @@ describe('express-winston', () => {
       }
     }),
     error: new Error()
+  }, {
+    message: 'should create a logger with a transport object',
+    logger: expressWinston.errorLogger({
+      transports: new winston.transports.Console({ silent: true })
+    }),
+    error: new Error()
+  }, {
+    message: 'should create a logger with a transport array',
+    logger: expressWinston.errorLogger({
+      transports: [new winston.transports.Console({ silent: true })]
+    }),
+    error: new Error()
   }]
   cases.map(executeTest)
-
-  after(() => {
-    winstonStub.restore()
-  })
 })
